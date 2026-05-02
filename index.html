@@ -192,17 +192,32 @@
 
     window.onload = async function() {
         try {
-            // Añadimos un "timestamp" para evitar que el navegador use el caché
-            const cacheBuster = "&t=" + new Date().getTime();
-            const response = await fetch(GOOGLE_SHEET_URL + cacheBuster);
+            // 1. Añadimos un "rompe-caché" al final de la URL
+            const cacheBuster = "&t=" + Date.now();
             
+            // 2. Usamos 'no-store' para obligar a una descarga fresca
+            const response = await fetch(GOOGLE_SHEET_URL + cacheBuster, {
+                cache: 'no-store',
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            });
+
+            if (!response.ok) throw new Error("Error en la respuesta del servidor");
+
             const text = await response.text();
-            document.getElementById('loader').style.display = 'none';
             
+            // --- PRUEBA DE CONTROL (Míralo en la consola F12) ---
+            console.log("Datos recibidos del Drive:", text.substring(0, 100)); 
+
+            document.getElementById('loader').style.display = 'none';
             procesarYRenderizar(text);
             lucide.createIcons();
+
         } catch (e) {
             console.error("Error cargando los datos:", e);
+            document.getElementById('loader').innerHTML = "⚠️ Error al conectar con los datos. Revisa la consola.";
         }
     };
 
